@@ -45,6 +45,7 @@ public class Timesheet {
         button_login.click();
     }
 
+
     public void fillTimesheet(String filePath) throws IOException {
 
         driver.get(urlTimesheet);
@@ -55,7 +56,6 @@ public class Timesheet {
         XSSFWorkbook workbook = new XSSFWorkbook(file);
         XSSFSheet sheet1 = workbook.getSheetAt(0);
 
-
         WebElement startDateTimesheet = driver.findElement(By.xpath("//input[@id='start-date-timesheet']"));
         WebElement endDateTimesheet = driver.findElement(By.xpath("//input[@id='end-date-timesheet']"));
         WebElement projectManager = driver.findElement(By.xpath("//select[@id='input-project-manager']"));
@@ -63,12 +63,14 @@ public class Timesheet {
         WebElement yearProject = driver.findElement(By.xpath("//select[@id='year_timesheet']"));
 
         LocalDate startDate = sheet1.getRow(1).getCell(0).getLocalDateTimeCellValue().toLocalDate();
+        String formattedStartDate = startDate.format(formatter);
         startDateTimesheet.clear();
-        startDateTimesheet.sendKeys(startDate.format(formatter));
+        ((JavascriptExecutor) driver).executeScript("arguments[0].value = arguments[1];", startDateTimesheet, formattedStartDate);
 
-        LocalDate endDate = sheet1.getRow(1).getCell(0).getLocalDateTimeCellValue().toLocalDate();
+        LocalDate endDate = sheet1.getRow(1).getCell(1).getLocalDateTimeCellValue().toLocalDate();
+        String formattedEndDate = endDate.format(formatter);
         endDateTimesheet.clear();
-        endDateTimesheet.sendKeys(endDate.format(formatter));
+        ((JavascriptExecutor) driver).executeScript("arguments[0].value = arguments[1];", endDateTimesheet, formattedEndDate);
 
         Select selectProjectManager = new Select(projectManager);
         selectProjectManager.selectByVisibleText(sheet1.getRow(1).getCell(2).getStringCellValue());
@@ -98,7 +100,7 @@ public class Timesheet {
             WebElement dateColumn = driver.findElement(By.xpath("//input[@id='date-activity" + i + "']"));
             WebElement activityColumn = driver.findElement(By.xpath("//textarea[@id='activity" + i + "']"));
             WebElement projectNameColumn = driver.findElement(By.xpath("//input[@id='project-name" + i + "']"));
-            WebElement dropdown = driver.findElement(By.xpath("//select[@id='activity-type" + i + "']"));
+            WebElement activityType = driver.findElement(By.xpath("//select[@id='activity-type" + i + "']"));
             WebElement requestByColumn = driver.findElement(By.xpath("//select[@id='request-by" + i + "']"));
             WebElement targetDateColumn = driver.findElement(By.xpath("//input[@id='target-date" + i + "']"));
             WebElement statusColumn = driver.findElement(By.xpath("//select[@id='status" + i + "']"));
@@ -122,8 +124,8 @@ public class Timesheet {
             ((JavascriptExecutor) driver).executeScript("arguments[0].value = arguments[1];", projectNameColumn, projectName);
 
             //activity type
-            Select select = new Select(dropdown);
-            select.selectByValue(sheet1.getRow(i + 3).getCell(3).getStringCellValue());
+            Select select = new Select(activityType);
+            select.selectByVisibleText(sheet1.getRow(i + 3).getCell(3).getStringCellValue());
 
             //request by
             Select select2 = new Select(requestByColumn);

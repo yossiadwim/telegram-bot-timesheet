@@ -23,7 +23,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.Objects;
 
 
 @Slf4j
@@ -56,35 +55,49 @@ public class MyBotTimesheet implements SpringLongPollingBot, LongPollingSingleTh
     public void consume(Update update) {
 
         if (update.hasMessage() && (update.getMessage().hasText() || update.getMessage().hasDocument())) {
-
             Long chatId = update.getMessage().getChatId();
             String messageText = update.getMessage().getText();
-
             if (update.getMessage().hasDocument()) {
+                String fileName = update.getMessage().getDocument().getFileName();
+                String extension = fileName.split("\\.")[1];
+                String messageDocumentAccepted = "accepted";
+                sendTelegramMessage(messageDocumentAccepted, chatId);
+
+                if (!extension.contentEquals("xlsx")){
+                    String messageTextNotValid = "not valid file";
+                    sendTelegramMessage(messageTextNotValid, chatId);
+                } else{
+                    if (!validationCaption(update.getMessage().getCaption())){
+                        String messageTextNotValid = "not valid caption";
+                        sendTelegramMessage(messageTextNotValid, chatId);
+                    }else{
+                        try {
+                            String messageDocumentProcess = "File diproses, mohon tunggu ya";
+                            sendTelegramMessage(messageDocumentProcess,chatId);
+                            handleDocument(update, chatId);
+                            sendTelegramMessage("Timesheet berhasil diisi", chatId);
+                        } catch (IOException e) {
+                            sendTelegramMessage("Terjadi kesalahan saat memproses file.", chatId);
+                        }
+                    }
+                }
+            } else if(update.getMessage().hasText()){
+                Message message = new Message(messageText, chatId);
                 try {
-                    handleDocument(update, chatId);
-                } catch (IOException e) {
+                    telegramClientService.send(sendMessageToUser(message));
+                } catch (TelegramApiException e) {
                     throw new RuntimeException(e);
                 }
             }
-
-            Message message= new Message(messageText,chatId);
-            sendMessage(message);
-
-            try {
-                telegramClientService.send(sendMessage(message));
-            } catch (TelegramApiException e) {
-                throw new RuntimeException(e);
-            }
-
         }
     }
 
-    public SendMessage sendMessage(Message message){
+    public SendMessage sendMessageToUser(Message message){
         return SendMessage
                 .builder()
                 .chatId(String.valueOf(message.getChatId()))
                 .text(message.getMessage())
+                .parseMode("Markdown")
                 .build();
     }
 
@@ -95,10 +108,10 @@ public class MyBotTimesheet implements SpringLongPollingBot, LongPollingSingleTh
         String email = "";
         String password = "";
 
-        if (caption.contains("\n")){
-            UserDTO userDTO = extractUser(caption);
-            email = userDTO.getEmail();
-            password = userDTO.getPassword();
+        if (Boolean.TRUE.equals(validationCaption(caption))){
+            UserDTO user = extractCaption(caption);
+            email = user.getEmail();
+            password = user.getPassword();
         }
 
         SaveDocumentDTO save = saveDocument(fileName,fileId, chatId);
@@ -111,6 +124,8 @@ public class MyBotTimesheet implements SpringLongPollingBot, LongPollingSingleTh
     }
 
     public SaveDocumentDTO saveDocument(String fileName, String fileId, Long chatId){
+
+        System.out.println("Nama file: " + fileName);
 
         try {
             String fileNameSave = fileName.split("\\.")[0];
@@ -130,7 +145,7 @@ public class MyBotTimesheet implements SpringLongPollingBot, LongPollingSingleTh
         }
     }
 
-    public UserDTO extractUser (String caption){
+    public UserDTO extractCaption (String caption){
         String email = caption.split("\n")[0];
         String password = caption.split("\n")[1];
 
@@ -140,6 +155,27 @@ public class MyBotTimesheet implements SpringLongPollingBot, LongPollingSingleTh
         return UserDTO.builder().email(validEmail).password(validPassword).build();
 
     }
+
+    public Boolean validationCaption(String caption){
+        if (caption == null){
+            return false;
+        }
+        else if (caption.contains("\n")){
+            return caption.contains("Email: ") && caption.contains("Password: ");
+        }
+        return false;
+    }
+
+
+    public void sendTelegramMessage(String message, Long chatId){
+        try {
+            telegramClientService.send(sendMessageToUser(new Message(message, chatId)));
+        } catch (TelegramApiException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
 }
 
 
