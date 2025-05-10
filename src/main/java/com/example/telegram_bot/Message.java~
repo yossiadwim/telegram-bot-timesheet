@@ -44,7 +44,6 @@ public class Message {
 
     public String getMessage() {
         String command = getCommand();
-        System.out.println("The command is: " + command);
         Boolean isValidCommand = validateCommand(command);
         if(Boolean.TRUE.equals(isValidCommand)){
             switch (command) {
@@ -63,14 +62,14 @@ public class Message {
        \s""";
                 case "/stop" -> messageTextToClient = "Terima kasih sudah menggunakan bot ini";
                 case "document accepted" -> messageTextToClient = "File diterima";
-                case "document process" -> messageTextToClient = "Timesheet sedang diproses...";
+                case "document process" -> messageTextToClient = "Timesheet sedang diproses... mohon tunggu ya";
                 case "document finished" -> messageTextToClient = "Timesheet berhasil diisi";
                 case "not valid caption" -> messageTextToClient = "Caption tidak valid";
                 case "not valid file" -> messageTextToClient = "File tidak valid atau tidak berformat .xlsx";
                 default -> messageTextToClient = "Perintah tidak dikenali";
             }
         }else{
-            messageTextToClient = "I don't understand you";
+            messageTextToClient = "Perintah tidak dikenali";
         }
 
         return messageTextToClient;

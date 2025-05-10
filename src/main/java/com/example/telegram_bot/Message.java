@@ -23,7 +23,6 @@ public class Message {
     }
 
     public String getCommand() {
-        System.out.println("Message is: "  + messageTextFromClient);
         if (messageTextFromClient.contentEquals("not valid file")){
             return "not valid file";
         }else if(messageTextFromClient.contentEquals("not valid caption")){
@@ -44,7 +43,6 @@ public class Message {
 
     public String getMessage() {
         String command = getCommand();
-        System.out.println("The command is: " + command);
         Boolean isValidCommand = validateCommand(command);
         if(Boolean.TRUE.equals(isValidCommand)){
             switch (command) {
@@ -70,7 +68,7 @@ public class Message {
                 default -> messageTextToClient = "Perintah tidak dikenali";
             }
         }else{
-            messageTextToClient = "I don't understand you";
+            messageTextToClient = "Perintah tidak dikenali";
         }
 
         return messageTextToClient;
