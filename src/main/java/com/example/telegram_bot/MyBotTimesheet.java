@@ -57,12 +57,12 @@ public class MyBotTimesheet implements SpringLongPollingBot, LongPollingSingleTh
         if (update.hasMessage() && (update.getMessage().hasText() || update.getMessage().hasDocument())) {
             Long chatId = update.getMessage().getChatId();
             String messageText = update.getMessage().getText();
+            String username = update.getMessage().getFrom().getUserName();
             if (update.getMessage().hasDocument()) {
                 String fileName = update.getMessage().getDocument().getFileName();
                 String extension = fileName.split("\\.")[1];
                 String messageDocumentAccepted = "accepted";
                 sendTelegramMessage(messageDocumentAccepted, chatId);
-
                 if (!extension.contentEquals("xlsx")){
                     String messageTextNotValid = "not valid file";
                     sendTelegramMessage(messageTextNotValid, chatId);
@@ -74,7 +74,7 @@ public class MyBotTimesheet implements SpringLongPollingBot, LongPollingSingleTh
                         try {
                             String messageDocumentProcess = "File diproses, mohon tunggu ya";
                             sendTelegramMessage(messageDocumentProcess,chatId);
-                            handleDocument(update, chatId);
+                            handleDocument(update, username, chatId);
                             sendTelegramMessage("Timesheet berhasil diisi", chatId);
                         } catch (IOException e) {
                             sendTelegramMessage("Terjadi kesalahan saat memproses file.", chatId);
@@ -101,7 +101,7 @@ public class MyBotTimesheet implements SpringLongPollingBot, LongPollingSingleTh
                 .build();
     }
 
-    public void handleDocument(Update update, Long chatId) throws IOException {
+    public void handleDocument(Update update, String username, Long chatId) throws IOException {
         String fileName = update.getMessage().getDocument().getFileName();
         String fileId = update.getMessage().getDocument().getFileId();
         String caption = update.getMessage().getCaption();
@@ -114,7 +114,7 @@ public class MyBotTimesheet implements SpringLongPollingBot, LongPollingSingleTh
             password = user.getPassword();
         }
 
-        SaveDocumentDTO save = saveDocument(fileName,fileId, chatId);
+        SaveDocumentDTO save = saveDocument(fileName,username,fileId,chatId);
 
         if ((!email.isEmpty() && !password.isEmpty()) && Boolean.TRUE.equals(save.getIsSaved())) {
             timesheet.login(email, password);
@@ -123,9 +123,7 @@ public class MyBotTimesheet implements SpringLongPollingBot, LongPollingSingleTh
 
     }
 
-    public SaveDocumentDTO saveDocument(String fileName, String fileId, Long chatId){
-
-        System.out.println("Nama file: " + fileName);
+    public SaveDocumentDTO saveDocument(String fileName, String username, String fileId, Long chatId){
 
         try {
             String fileNameSave = fileName.split("\\.")[0];
@@ -134,7 +132,7 @@ public class MyBotTimesheet implements SpringLongPollingBot, LongPollingSingleTh
             File file = telegramClientService.getClient().execute(new GetFile(fileId));
             InputStream inputStream = telegramClientService.getClient().downloadFileAsStream(file);
 
-            Path outputPath = Paths.get("downloads", fileNameSave + "_" + chatId+"."+extension);
+            Path outputPath = Paths.get("downloads", fileNameSave + "_" + username + "_"+ chatId+"."+extension);
             Files.createDirectories(outputPath.getParent());
             Files.copy(inputStream, outputPath, StandardCopyOption.REPLACE_EXISTING);
 
