@@ -4,8 +4,13 @@ target/
 !**/src/main/**/target/
 !**/src/test/**/target/
 
+# Ignore actual config
 /src/main/resources/application.properties
-downloads
+
+src/main/resources/templates
+
+# Ignore downloads folder
+/downloads/
 
 ### STS ###
 .apt_generated

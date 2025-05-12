@@ -5,13 +5,11 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import javax.annotation.Nonnull;
-
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class SaveDocumentDTO {
+public class DocumentDTO {
 
     private String filePath;
     private Boolean isSaved;
