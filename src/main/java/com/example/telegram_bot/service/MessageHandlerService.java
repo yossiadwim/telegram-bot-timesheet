@@ -20,9 +20,11 @@ public class MessageHandlerService {
     public String messageTextToClient;
 
     public MessageDTO message(String messageTextFromClient, Long chatId) throws TelegramApiException {
-        String messageTextToClient = extractCommand(messageTextFromClient, chatId);
-        return MessageDTO.builder().messageTextToClient(messageTextToClient).chatId(chatId).build();
+        String text = extractCommand(messageTextFromClient, chatId);
+        if (text == null || text.isBlank()) return null;
+        return MessageDTO.builder().messageTextToClient(text).chatId(chatId).build();
     }
+
 
     private String extractCommand(String messageTextFromClient, Long chatId) throws TelegramApiException {
         return switch (messageTextFromClient) {
@@ -54,13 +56,14 @@ public class MessageHandlerService {
     }
 
     public void handleMessage(String messageTextFromClient, Long chatId) throws TelegramApiException {
+        if (messageTextFromClient == null || messageTextFromClient.isBlank()) return;
 
         MessageDTO messageDTO = message(messageTextFromClient, chatId);
-        if (messageTextFromClient != null && !messageTextFromClient.isBlank()) {
+        if (messageDTO != null) {
             sendMessage(messageDTO.getMessageTextToClient(), messageDTO.getChatId());
         }
-
     }
+
 
     public void sendMessage(String messageTextFromClient, Long chatId) throws TelegramApiException {
         if (messageTextFromClient == null || messageTextFromClient.isBlank()) return;

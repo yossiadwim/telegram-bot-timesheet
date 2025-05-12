@@ -7,7 +7,7 @@ target/
 # Ignore actual config
 /src/main/resources/application.properties
 
-src/main/resources/templates
+src/main/resources/templates/
 
 # Ignore downloads folder
 /downloads/

@@ -25,25 +25,27 @@ public class DocumentHandlerService {
     private final Timesheet timesheet;
 
     public Boolean validationCaption(String caption){
-        if (caption == null){
+        if (caption == null || !caption.contains("\n")) {
             return false;
         }
-        else if (caption.contains("\n")){
-            return caption.contains("Email: ") && caption.contains("Password: ");
-        }
-        return false;
+
+        String[] lines = caption.split("\n");
+        return lines.length == 2 && lines[0].startsWith("Email: ") && lines[1].startsWith("Password: ");
     }
 
-    public UserDTO extractCaption (String caption){
-        String email = caption.split("\n")[0];
-        String password = caption.split("\n")[1];
 
-        String validEmail = email.split(": ")[1];
-        String validPassword = password.split(": ")[1];
+    public UserDTO extractCaption(String caption) {
+        String[] lines = caption.split("\n");
 
-        return UserDTO.builder().email(validEmail).password(validPassword).build();
+        String email = lines[0].replaceFirst("Email: ", "").trim();
+        String password = lines[1].replaceFirst("Password: ", "").trim();
 
+        return UserDTO.builder()
+                .email(email)
+                .password(password)
+                .build();
     }
+
 
     public void handleDocument(Update update, String username, Long chatId) throws IOException {
         String fileName = update.getMessage().getDocument().getFileName();
@@ -61,8 +63,7 @@ public class DocumentHandlerService {
         DocumentDTO documentDTO = saveDocument(fileName,username,fileId,chatId);
 
         if ((!email.isEmpty() && !password.isEmpty()) && Boolean.TRUE.equals(documentDTO.getIsSaved())) {
-            timesheet.login(email, password);
-            timesheet.fillTimesheet(documentDTO.getFilePath());
+            processTimesheet(documentDTO, email, password);
         }
 
     }
@@ -70,13 +71,14 @@ public class DocumentHandlerService {
     public DocumentDTO saveDocument(String fileName, String username, String fileId, Long chatId){
 
         try {
-            String fileNameSave = fileName.split("\\.")[0];
             String extension = fileName.split("\\.")[1];
+            String savedFileName = String.format("%s_%s_%s.%s",
+                    fileName.split("\\.")[0], username, chatId, extension);
 
             File file = telegramClientService.getClient().execute(new GetFile(fileId));
             InputStream inputStream = telegramClientService.getClient().downloadFileAsStream(file);
 
-            Path outputPath = Paths.get("downloads", fileNameSave + "_" + username + "_"+ chatId+"."+extension);
+            Path outputPath = Paths.get("downloads", savedFileName);
             Files.createDirectories(outputPath.getParent());
             Files.copy(inputStream, outputPath, StandardCopyOption.REPLACE_EXISTING);
 
@@ -86,5 +88,11 @@ public class DocumentHandlerService {
             return DocumentDTO.builder().filePath(null).isSaved(false).build();
         }
     }
+
+    private void processTimesheet(DocumentDTO document, String email, String password) throws IOException {
+        timesheet.login(email, password);
+        timesheet.fillTimesheet(document.getFilePath());
+    }
+
 
 }
