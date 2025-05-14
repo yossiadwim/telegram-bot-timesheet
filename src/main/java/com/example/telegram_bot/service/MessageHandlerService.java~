@@ -57,6 +57,7 @@ public class MessageHandlerService {
 
     public void handleMessage(String messageTextFromClient, Long chatId) throws TelegramApiException {
         if (messageTextFromClient == null || messageTextFromClient.isBlank()) return;
+
         MessageDTO messageDTO = message(messageTextFromClient, chatId);
         if (messageDTO != null) {
             sendMessage(messageDTO.getMessageTextToClient(), messageDTO.getChatId());
@@ -65,17 +66,7 @@ public class MessageHandlerService {
 
 
     public void sendMessage(String messageTextFromClient, Long chatId) throws TelegramApiException {
-        if (messageTextFromClient == null || messageTextFromClient.isBlank()) return;
-        SendMessage sendMessageBuilder = SendMessage.builder()
-                .chatId(chatId)
-                .text(messageTextFromClient)
-                .parseMode("Markdown")
-                .build();
-        telegramClientService.sendMessage(sendMessageBuilder);
-    }
-
-    public void sendMessageByKeyword(String keyword, Long chatId) throws TelegramApiException {
-        String text = extractCommand(keyword, chatId);
+        String text = extractCommand(messageTextFromClient, chatId);
         if (text == null || text.isBlank()) return;
         try{
             SendMessage sendMessageBuilder = SendMessage.builder()
@@ -87,8 +78,8 @@ public class MessageHandlerService {
         } catch (TelegramApiException e) {
             throw new RuntimeException(e);
         }
-
     }
+
 
     public void sendTemplate(Long chatId) {
         try {
